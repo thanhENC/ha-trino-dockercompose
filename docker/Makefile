@@ -15,28 +15,7 @@ create-network:
 # -----------------------------------------------------------------------------
 .PHONY: compose-up-all
 compose-up-all: create-network
-	@docker compose --profile spark --profile trino --env-file .env up -d
-	@docker ps
-
-# compose up with 1 spark worker
-# -----------------------------------------------------------------------------
-.PHONY: compose-up-spark1
-compose-up-spark1: create-network
-	@docker compose --profile spark --env-file .env up -d
-	@docker ps
-
-# compose up with 2 spark workers
-# -----------------------------------------------------------------------------
-.PHONY: compose-up-spark2
-compose-up-spark2: create-network
-	@docker compose --profile spark up -d --scale spark-worker=2
-	@docker ps
-
-# compose up with 3 spark workers
-# -----------------------------------------------------------------------------
-.PHONY: compose-up-spark3
-compose-up-spark3: create-network
-	@docker compose --profile spark up -d --scale spark-worker=3
+	@docker compose --profile trino --env-file .env up -d
 	@docker ps
 
 # compose up with certbot
@@ -49,8 +28,8 @@ compose-up-certbot: create-network
 
 # get certbot certificate
 # -----------------------------------------------------------------------------
-DOMAIN=domain.name
-EMAIL=email@domain.name
+DOMAIN=trino.datagang.systems
+EMAIL=thanhenc@gmail.com
 .PHONY: get-cert
 get-cert:
 	@docker exec -it certbot certbot certonly --noninteractive --webroot --webroot-path=/var/www/html --email $(EMAIL) --agree-tos --no-eff-email -d $(DOMAIN) --force-renewal
@@ -73,7 +52,7 @@ compose-down:
 # Initialize adventureworks database
 .PHONY: init-db
 init-db:
-	@cd ../postgres-data && chmod +x adw14data.sh && ./adw14data.sh
+	@cd ../postgres-data && chmod +x adw14.sh && ./adw14.sh
 	@cd ../docker
 
 # Clean temp data
