@@ -2,12 +2,19 @@
 
 # By default, trino is placed behind NGINX_SERVER_NAME. If you want to change this, please modify the .env file.
 
+upstream trinocoordinator {
+   server trino:8080 fail_timeout=3s max_fails=1;
+   server trino-backup:8080 backup;
+}
+
 server {
     listen ${NGINX_PORT};
     server_name ${NGINX_SERVER_NAME};
 
     location / {
-      proxy_pass http://trino:8080;
+      proxy_pass http://trinocoordinator;
+      proxy_redirect  http://trino/ /;
+      proxy_connect_timeout 3;
       include proxy.conf;
     }
 

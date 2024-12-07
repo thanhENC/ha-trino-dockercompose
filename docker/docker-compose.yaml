@@ -30,31 +30,48 @@ services:
     networks:
       - data-network
 
-  # oltp:
-  #   hostname: oltp
-  #   container_name: oltp-adw14
-  #   image: postgres:14
-  #   environment:
-  #     POSTGRES_USER: ${OLTP_DB_USER:-adventureworks}
-  #     POSTGRES_PASSWORD: ${OLTP_DB_PASSWORD:-adventureworks}
-  #     POSTGRES_DB: ${OLTP_DB_NAME:-adventureworks}
-  #   ports:
-  #     - 5432:5432
-  #   volumes:
-  #     - ./volumes/oltp:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD", "pg_isready"]
-  #     interval: 1s
-  #     timeout: 10s
-  #     retries: 10
-  #   networks:
-  #     - data-network
-
   # ==================================================
   # Trino: distributed SQL query engine for big data
   # Trino cluster service consists of Trino `coordinator` and `worker`
   # ==================================================
   # Trino coordinator service: client-facing service that accepts incoming queries
+  trino-backup:
+    container_name: trino-backup
+    image: "trinodb/trino:455"
+    hostname: trino-backup
+    user: root
+    profiles:
+      - trino
+    # restart: on-failure
+    environment:
+      # oltp catalog
+      OLTP_DB_HOST: ${OLTP_DB_HOST:-oltp}
+      OLTP_DB_PORT: ${OLTP_DB_PORT:-5432}
+      OLTP_DB_NAME: ${OLTP_DB_NAME:-adventureworks}
+      OLTP_DB_USER: ${OLTP_DB_USER:-adventureworks}
+      OLTP_DB_PASSWORD: ${OLTP_DB_PASSWORD:-adventureworks}
+    volumes:
+      - ./trino/etc/jvm.config:/etc/trino/jvm.config
+      - ./trino/etc/coordinator.config.properties:/etc/trino/config.properties
+      - ./trino/etc/coordinator.node.properties:/etc/trino/node.properties
+      - ./trino/etc/password-authenticator.properties:/etc/trino/password-authenticator.properties
+      - ./trino/etc/password.db:/usr/lib/trino/pwd/password.db
+      - ./trino/etc/access-control.properties:/etc/trino/access-control.properties
+      - ./trino/etc/rules.json:/etc/rules.json
+      - ./trino/catalog:/etc/trino/catalog
+      - ./trino/templates:/etc/trino-template
+      - ./trino/trinoconfigcatalogs.sh:/docker-entrypoint-mount.sh
+    entrypoint: [ "sh", "-c", "sed 's/\r$$//' /docker-entrypoint-mount.sh > /docker-entrypoint-clean.sh && chmod +x /docker-entrypoint-clean.sh && /docker-entrypoint-clean.sh && /usr/lib/trino/bin/run-trino" ]
+    # ports:
+    #   - ${TRINO_PORT_EXPOSE}:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - data-network
+
   trino:
     container_name: trino
     image: "trinodb/trino:455"
@@ -82,8 +99,8 @@ services:
       - ./trino/templates:/etc/trino-template
       - ./trino/trinoconfigcatalogs.sh:/docker-entrypoint-mount.sh
     entrypoint: [ "sh", "-c", "sed 's/\r$$//' /docker-entrypoint-mount.sh > /docker-entrypoint-clean.sh && chmod +x /docker-entrypoint-clean.sh && /docker-entrypoint-clean.sh && /usr/lib/trino/bin/run-trino" ]
-    ports:
-      - ${TRINO_PORT_EXPOSE}:8080
+    # ports:
+    #   - ${TRINO_PORT_EXPOSE}:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
       interval: 30s
