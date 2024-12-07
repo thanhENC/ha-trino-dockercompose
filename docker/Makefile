@@ -15,7 +15,7 @@ create-network:
 # -----------------------------------------------------------------------------
 .PHONY: compose-up-all
 compose-up-all: create-network
-	@docker compose --profile trino --env-file .env up -d
+	@docker compose --profile trino --env-file .env up -d --scale trino-worker=2
 	@docker ps
 
 # compose up with certbot
@@ -28,8 +28,8 @@ compose-up-certbot: create-network
 
 # get certbot certificate
 # -----------------------------------------------------------------------------
-DOMAIN=trino.datagang.systems
-EMAIL=thanhenc@gmail.com
+DOMAIN=trino-coordinator.domain.name
+EMAIL=email@domain.name
 .PHONY: get-cert
 get-cert:
 	@docker exec -it certbot certbot certonly --noninteractive --webroot --webroot-path=/var/www/html --email $(EMAIL) --agree-tos --no-eff-email -d $(DOMAIN) --force-renewal
@@ -64,7 +64,7 @@ clean: compose-down
 # Clean Adw14 data
 # -----------------------------------------------------------------------------
 .PHONY: clean-postgres-data
-clean-adw14:
+clean-postgres-data:
 	@rm -r ../postgres-data/data
 	@rm -r ../postgres-data/AdventureWorks-oltp-install-script.zip
 

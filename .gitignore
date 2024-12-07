@@ -1,4 +1,8 @@
 .env
 
 .vscode/
-*/volumes/oltp/
+
+# volumes
+docker/volumes/*
+!docker/volumes/.gitkeep
+!docker/volumes/certbot/www/.gitkeep
